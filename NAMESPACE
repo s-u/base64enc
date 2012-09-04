@@ -1,0 +1,2 @@
+useDynLib(base64enc, B64_encode)
+export(base64encode)
