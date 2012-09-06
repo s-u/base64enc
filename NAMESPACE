@@ -1,2 +1,2 @@
-useDynLib(base64enc, B64_encode)
-export(base64encode)
+useDynLib(base64enc, B64_encode, B64_decode)
+export(base64encode, base64decode)

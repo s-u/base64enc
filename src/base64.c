@@ -11,13 +11,13 @@
 
 /* -- base64 encode/decode -- */
 
-static char *base64encode(const unsigned char *src, int len, char *dst);
-static int base64decode(const char *src, void *dst, int max_len);
+static char *base64encode(const unsigned char *src, blen_t len, char *dst);
+static int base64decode(const char *src, void *dst, blen_t max_len);
 
 static const char *b64tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /* dst must be at least (len + 2) / 3 * 4 + 1 bytes long and will be NUL terminated when done */
-static char *base64encode(const unsigned char *src, int len, char *dst) {
+static char *base64encode(const unsigned char *src, blen_t len, char *dst) {
     while (len > 0) {
 	*(dst++) = b64tab[src[0] >> 2];
 	*(dst++) = b64tab[((src[0] & 0x03) << 4) | ((src[1] & 0xf0) >> 4)];
@@ -46,7 +46,7 @@ static unsigned int val(const char **src) {
 }
 
 /* returns the decoded length or -1 if max_len was not enough */
-static int base64decode(const char *src, void *dst, int max_len) {
+static int base64decode(const char *src, void *dst, blen_t max_len) {
     unsigned char *t = (unsigned char*) dst, *end = t + max_len;
     while (*src && t < end) {
 	unsigned int v = val(&src);
@@ -68,7 +68,7 @@ static int base64decode(const char *src, void *dst, int max_len) {
 	    }
 	}
     }
-    return (int) (t - (unsigned char*) dst);
+    return (blen_t) (t - (unsigned char*) dst);
 }
 
 static char stb[8192];
@@ -138,4 +138,29 @@ SEXP B64_encode(SEXP what, SEXP linewidth, SEXP newline) {
 	UNPROTECT(1);
 	return res;
     }
+}
+
+SEXP B64_decode(SEXP what) {
+    /* we need to allocate enough space to decode.
+       FIXME: For now, we assume it's full of payload;
+       we will over-allocate if there is junk behind it */
+    blen_t tl = 0;
+    SEXP res;
+    int ns = LENGTH(what), i;
+    unsigned char *dst;
+    if (TYPEOF(what) != STRSXP) Rf_error("I can only decode base64 strings");
+    for (i = 0; i < ns; i++)
+	tl += strlen(CHAR(STRING_ELT(what, i)));
+    tl = (tl / 4) * 3 + 4;
+    res = allocVector(RAWSXP, tl);
+    dst = (unsigned char*) RAW(res);
+    for (i = 0; i < ns; i++) {
+	blen_t al = base64decode(CHAR(STRING_ELT(what, i)), dst, tl);
+	if (al < 0) /* this should never happen as we allocated enough space ... */
+	    Rf_error("decoding error - insufficient buffer space");
+	tl -= al;
+	dst += al;
+    }
+    SETLENGTH(res, dst - ((unsigned char*) RAW(res)));
+    return res;
 }
