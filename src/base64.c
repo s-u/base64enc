@@ -6,7 +6,7 @@
 
 */
 
-/* int for now but it should be something like R_xlen_t */
+/* int for now but it should be something like R_xlen_t -- must be signed, though! */
 #define blen_t int
 
 /* -- base64 encode/decode -- */
@@ -16,19 +16,29 @@ static int base64decode(const char *src, void *dst, blen_t max_len);
 
 static const char *b64tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+#define SRC(i) ((i < len) ? src[i] : 0) /* guarded access to src[] */
+
 /* dst must be at least (len + 2) / 3 * 4 + 1 bytes long and will be NUL terminated when done */
 static char *base64encode(const unsigned char *src, blen_t len, char *dst) {
-    while (len > 0) {
+    while (len >= 3) { /* no need to worry about padding - faster */
 	*(dst++) = b64tab[src[0] >> 2];
 	*(dst++) = b64tab[((src[0] & 0x03) << 4) | ((src[1] & 0xf0) >> 4)];
-	*(dst++) = (len > 1) ? b64tab[((src[1] & 0x0f) << 2) | ((src[2] & 0xc0) >> 6)] : '=';
-	*(dst++) = (len > 2) ? b64tab[src[2] & 0x3f] : '=';
+	*(dst++) = b64tab[((src[1] & 0x0f) << 2) | ((src[2] & 0xc0) >> 6)];
+	*(dst++) = b64tab[src[2] & 0x3f];
 	src += 3;
 	len -= 3;
+    }
+    if (len > 0) { /* last chunk - may need padding and guarding against OOB */
+	*(dst++) = b64tab[src[0] >> 2];
+	*(dst++) = b64tab[((src[0] & 0x03) << 4) | ((SRC(1) & 0xf0) >> 4)];
+	*(dst++) = (len > 1) ? b64tab[((src[1] & 0x0f) << 2) | ((SRC(2) & 0xc0) >> 6)] : '=';
+	*(dst++) = (len > 2) ? b64tab[src[2] & 0x3f] : '=';
     }
     *dst = 0;
     return dst;
 }
+
+#undef SRC
 
 static unsigned int val(const char **src) {
     while (1) {
