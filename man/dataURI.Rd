@@ -8,13 +8,18 @@ Create a data: URI string
   the payload either using base64 ot URI encoding.
 }
 \usage{
-dataURI(data, mime = "", encoding = "base64")
+dataURI(data, mime = "", encoding = "base64", file)
 }
 \arguments{
-  \item{data}{raw vector or a string to use as payload}
-  \item{mime}{MIME-type of the data (defaults to "text/plain")}
+  \item{data}{raw vector, connection or character vector to use as
+  payload. Character vectors of more than one element are collapsed
+  using \code{"\n"} before encoding.}
+  \item{mime}{MIME-type of the data (per standard "" is interpreted as
+  "text/plain;charset=US-ASCII" without including it in the URI)}
   \item{encoding}{data encoding to use. Mut be either \code{"base64"}
   or \code{NULL}}
+  \item{file}{filename (string) to open as payload. \code{file} and
+  \code{data} are mutually exclusive}
 }
 %\details{
 %}
@@ -32,5 +37,12 @@ Simon Urbanek
 \examples{
   dataURI(as.raw(1:10)) # default is base64
   dataURI(as.raw(1:10), encoding=NULL) # URI
+  if (require("png", quietly=TRUE)) {
+    # let's say you have an image - e.g. from dev.capture(TRUE)
+    img <- matrix(1:16/16, 4)
+    dataURI(writePNG(img), "image/png")
+    # or straight from a file
+    dataURI(file=system.file("img", "Rlogo.png", package="png"), mime="image/png")
+  }
 }
 \keyword{manip}
