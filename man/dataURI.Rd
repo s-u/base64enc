@@ -1,10 +1,10 @@
 \name{dataURI}
 \alias{dataURI}
 \title{
-Create a data: URI string
+Create a data URI string
 }
 \description{
-  \code{dataURI} creates URI with the \code{data:} schema by encoding
+  \code{dataURI} creates URI with the \code{data:} scheme by encoding
   the payload either using base64 ot URI encoding.
 }
 \usage{
@@ -16,7 +16,7 @@ dataURI(data, mime = "", encoding = "base64", file)
   using \code{"\n"} before encoding.}
   \item{mime}{MIME-type of the data (per standard "" is interpreted as
   "text/plain;charset=US-ASCII" without including it in the URI)}
-  \item{encoding}{data encoding to use. Mut be either \code{"base64"}
+  \item{encoding}{data encoding to use. Must be either \code{"base64"}
   or \code{NULL}}
   \item{file}{filename (string) to open as payload. \code{file} and
   \code{data} are mutually exclusive}
@@ -26,8 +26,9 @@ dataURI(data, mime = "", encoding = "base64", file)
 \value{
   string of the form \code{data:[mime][;base64],<encoded-payload>}
 }
-%\references{
-%}
+\references{
+\href{http://tools.ietf.org/html/rfc2397}{RFC 2397 The "data" URL scheme}
+}
 \author{
 Simon Urbanek
 }
