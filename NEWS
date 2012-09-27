@@ -1,0 +1,9 @@
+0.1-1	(under development)
+   o	fix a bug in base64decode where output is a file name
+
+   o	add base64decode(file=...) as a (non-leaking) shorthand for
+	base64decode(file(...))
+
+
+0.1-0	2012-09-07
+   o	initial CRAN release

@@ -15,7 +15,7 @@
 }
 \usage{
 base64encode(what, linewidth, newline)
-base64decode(what, output=NULL)
+base64decode(what, output = NULL, file)
 }
 \arguments{
   \item{what}{data to be encoded/decoded. For \code{base64encode} it
@@ -26,11 +26,15 @@ base64decode(what, output=NULL)
     limit and values 1 .. 3 are silently treated as 4 since that is the
     shortest valid line.}
   \item{newline}{only applicable if \code{linewidth} is set; if set
-    (single string), the result will be a single string with all lines
+    (string), the result will be a single string with all lines
     joined using the \code{newline} string}
- \item{output}{if \code{NULL} then the output will be a raw vector
-  with the decoded data, otherwise it must be either a filename
-  (string) or a binary connection.}
+  \item{output}{if \code{NULL} then the output will be a raw vector
+    with the decoded data, otherwise it must be either a filename
+    (string) or a binary connection.}
+  \item{file}{file name (string) for data to use as input instead of
+    \code{what}. It is essentially just a shorthand for
+    \code{base64decode(file(name))}. Only one of \code{what} and
+    \code{file} can be specified.}
 }
 %\details{
 %}
