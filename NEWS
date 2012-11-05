@@ -1,4 +1,4 @@
-0.1-1	(under development)
+0.1-1	2012-11-05
    o	fix a bug in base64decode where output is a file name
 
    o	add base64decode(file=...) as a (non-leaking) shorthand for
