@@ -8,7 +8,7 @@ base64encode <- function(what, linewidth, newline) {
     on.exit(close(what))
   }
   if (inherits(what, "connection")) {
-    slice <- 65536L  ## default slice size
+    slice <- 65535L  ## default slice size - must be divisible by 3
     if (linewidth > 0L) { ## we have to make sure the slices span whole lines
       if (linewidth %% 4L > 0) linewidth <- linewidth - linewidth %% 4L
       bw <- as.integer(linewidth / 4L) * 3L

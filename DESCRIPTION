@@ -1,5 +1,5 @@
 Package: base64enc
-Version: 0.1-1
+Version: 0.1-2
 Title: Tools for base64 encoding
 Author: Simon Urbanek <Simon.Urbanek@r-project.org>
 Maintainer: Simon Urbanek <Simon.Urbanek@r-project.org>
