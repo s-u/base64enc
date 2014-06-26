@@ -1,4 +1,4 @@
-0.1-2	(under development)
+0.1-2	2014-06-26
    o	bugfix: encoding content of more than 65536 bytes without
 	linebreaks produced padding characters between chunks because
 	chunk size was not divisible by three.
