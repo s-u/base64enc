@@ -2,6 +2,11 @@
 
 #include <Rinternals.h>
 
+/* for compatibility with older R versions */
+#ifndef XLENGTH
+#define XLENGTH(X) LENGTH(X)
+#endif
+
 #define report(reason) { snprintf(cause, sizeof(cause), "INVALID byte 0x%02x at 0x%lx (%lu, line %lu): %s\n", (int) buf[i], i, i, line, reason); if (max_cl) *max_cl = maxcl; return 1; }
 
 static char cause[512];
