@@ -25,10 +25,10 @@ base64encode <- function(what, linewidth, newline) {
   .Call(B64_encode, as.raw(what), linewidth, newline)
 }
 
-base64decode <- function(what, output=NULL, file) {
-  if (!missing(file) && !missing(what)) stop("'what' and 'file' are mutually exclusive")
-  if (!missing(file)) {
-    what <- file(file, "r")
+base64decode <- function(what, output=NULL, filename) {
+  if (!missing(filename) && !missing(what)) stop("'what' and 'filename' are mutually exclusive")
+  if (!missing(filename)) {
+    what <- file(filename, "r")
     on.exit(close(what))
   }
   if (is.character(output)) {
