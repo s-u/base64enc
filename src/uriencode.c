@@ -1,5 +1,12 @@
 #include <string.h>
+#include <stddef.h>
 #include <Rinternals.h>
+
+#include <Rversion.h>
+/* for compatibility with older R versions */
+#if R_VERSION < R_Version(3,0,0)
+#define XLENGTH(X) LENGTH(X)
+#endif
 
 static const char *plain = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~";
 static const char *hex = "0123456789ABCDEF";
@@ -15,17 +22,17 @@ SEXP C_URIencode(SEXP what, SEXP resrv) {
     memset(tab, 0, sizeof(tab));
     while (*c) tab[*(c++)] = 1;
     if (TYPEOF(resrv) == STRSXP) {
-	int n = LENGTH(resrv), i;
+	size_t n = XLENGTH(resrv), i;
 	for (i = 0; i < n; i++) {
 	    c = (const unsigned char*) CHAR(STRING_ELT(resrv, i));
 	    while (*c) tab[*(c++)] = 1;
 	}
     }
     if (TYPEOF(what) == RAWSXP) {
-	int len = 0;
+	size_t len = 0;
 	const unsigned char *cend =
 	    (c = (const unsigned char*) RAW(what)) +
-	    LENGTH(what);
+	    XLENGTH(what);
 	char *enc, *ce;
 	while (c < cend)
 	    len += tab[*(c++)] ? 1 : 3;
@@ -42,14 +49,14 @@ SEXP C_URIencode(SEXP what, SEXP resrv) {
 	*ce = 0;
 	return mkString(enc);
     } else {
-	int i, n = LENGTH(what), maxlen = 0;
+	size_t i, n = XLENGTH(what), maxlen = 0;
 	char *enc, *ce;
 	res = allocVector(STRSXP, n);
 	if (n == 0) return res;
 	PROTECT(res);
 	/* find the longest encoded string to allocate buffer */
 	for (i = 0; i < n; i++) { /* FIXME: we should tanslate to UTF8 */
-	    int len = 0;
+	    size_t len = 0;
 	    c = (const unsigned char*) CHAR(STRING_ELT(what, i));
 	    while (*c)
 		len += tab[*(c++)] ? 1 : 3;

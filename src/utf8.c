@@ -1,20 +1,22 @@
 #include <stdio.h>
+#include <stddef.h>
 
 #include <Rinternals.h>
 
+#include <Rversion.h>
 /* for compatibility with older R versions */
-#ifndef XLENGTH
+#if R_VERSION < R_Version(3,0,0)
 #define XLENGTH(X) LENGTH(X)
 #endif
 
-#define report(reason) { snprintf(cause, sizeof(cause), "INVALID byte 0x%02x at 0x%lx (%lu, line %lu): %s\n", (int) buf[i], i, i, line, reason); if (max_cl) *max_cl = maxcl; return 1; }
+#define report(reason) { snprintf(cause, sizeof(cause), "INVALID byte 0x%02x at 0x%lx (%lu, line %lu): %s\n", (int) buf[i], (unsigned long) i, (unsigned long) i, (unsigned long) line, reason); if (max_cl) *max_cl = maxcl; return 1; }
 
 static char cause[512];
 
-static int utf8_check_(const unsigned char *buf, unsigned long len, int *max_cl, int min_char) {
-    unsigned long i = 0, bp = len, line = 1;
+static int utf8_check_(const unsigned char *buf, size_t len, int *max_cl, int min_char) {
+    size_t i = 0, bp = len, line = 1;
     int maxcl = 1;
-    
+
     while (i < bp) {
 	if (min_char > 0 && buf[i] < min_char)
 	    report("disallowed control character");
@@ -77,7 +79,7 @@ SEXP utf8_check(SEXP sWhat, SEXP sQuiet, SEXP sXLen, SEXP sMinChar) {
     if (TYPEOF(sWhat) != RAWSXP) Rf_error("invalid input");
     {
 	int maxcl = 0;
-	int res = utf8_check_((const unsigned char*) RAW(sWhat), XLENGTH(sWhat), &maxcl, asInteger(sMinChar));
+	int res = utf8_check_((const unsigned char*) RAW(sWhat), (size_t) XLENGTH(sWhat), &maxcl, asInteger(sMinChar));
 	
 	if (asInteger(sQuiet) == 0 && res)
 	    Rf_error("%s", cause);

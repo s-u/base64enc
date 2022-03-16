@@ -6,8 +6,19 @@
 
 */
 
-/* int for now but it should be something like R_xlen_t -- must be signed, though! */
-#define blen_t int
+#include <stddef.h>
+
+/* it should be something like R_xlen_t -- must be signed, though! */
+typedef ptrdiff_t blen_t;
+
+#include <string.h>
+#include <Rinternals.h>
+
+#include <Rversion.h>
+/* for compatibility with older R versions */
+#if R_VERSION < R_Version(3,0,0)
+#define XLENGTH(X) LENGTH(X)
+#endif
 
 /* -- base64 encode/decode -- */
 
@@ -83,20 +94,19 @@ static int base64decode(const char *src, void *dst, blen_t max_len) {
 
 static char stb[8192];
 
-#include <Rinternals.h>
-#include <string.h>
-
 SEXP B64_encode(SEXP what, SEXP linewidth, SEXP newline) {
     const char *nl = 0;
     char *buf = stb;
     const unsigned char *src = (const unsigned char*) RAW(what);
     blen_t buflen = sizeof(stb), slice;
-    int lwd = 0, len = LENGTH(what), step;
+    blen_t lwd = 0, len = XLENGTH(what), step;
     if (len == 0) return allocVector(STRSXP, 0);
     if (TYPEOF(newline) == STRSXP && LENGTH(newline) > 0)
 	nl = CHAR(STRING_ELT(newline, 0));
-    if (TYPEOF(linewidth) == INTSXP || TYPEOF(linewidth) == REALSXP)
+    if (TYPEOF(linewidth) == INTSXP)
 	lwd = asInteger(linewidth);
+    if (TYPEOF(linewidth) == REALSXP)
+	lwd = (blen_t) asReal(linewidth);
     if (lwd <= 0) lwd = 0;
     else if (lwd < 4) lwd = 4; /* there must be at least 4 chars per line */
     lwd -= lwd & 3;
@@ -110,7 +120,7 @@ SEXP B64_encode(SEXP what, SEXP linewidth, SEXP newline) {
 	    buf = R_alloc(256, (slice >> 8) + 1); /* making sure we can use at least 73 bits where possible */
 	    buflen = slice;
 	}
-	if (lwd == 0 || len <= step) { /* easy, jsut call encode and out */
+	if (lwd == 0 || len <= step) { /* easy, just call encode and out */
 	    base64encode(src, len, buf);
 	    return mkString(buf);
 	}
@@ -118,7 +128,7 @@ SEXP B64_encode(SEXP what, SEXP linewidth, SEXP newline) {
 	{
 	    char *dst = buf;
 	    while (len) {
-		int amt = (len > step) ? step : len;
+		blen_t amt = (len > step) ? step : len;
 		dst = base64encode(src, amt, dst);
 		src += amt;
 		len -= amt;
@@ -130,7 +140,7 @@ SEXP B64_encode(SEXP what, SEXP linewidth, SEXP newline) {
 	    return mkString(buf);
 	}
     } else { /* lwd and no nl = vector result */
-	int i = 0;
+	blen_t i = 0;
 	SEXP res = PROTECT(allocVector(STRSXP, len / step + 1));
 	slice = lwd + 1;
 	if (slice > buflen) {
@@ -138,13 +148,13 @@ SEXP B64_encode(SEXP what, SEXP linewidth, SEXP newline) {
 	    buflen = slice;
 	}
 	while(len) {
-	    int amt = (len > step) ? step : len;
+	    blen_t amt = (len > step) ? step : len;
 	    base64encode(src, amt, buf);
 	    src += amt;
 	    SET_STRING_ELT(res, i++, mkChar(buf));
 	    len -= amt;
 	}
-	if (i < LENGTH(res)) SETLENGTH(res, i);
+	if (i < XLENGTH(res)) SETLENGTH(res, i);
 	UNPROTECT(1);
 	return res;
     }
@@ -156,7 +166,7 @@ SEXP B64_decode(SEXP what) {
        we will over-allocate if there is junk behind it */
     blen_t tl = 0;
     SEXP res;
-    int ns = LENGTH(what), i;
+    blen_t ns = XLENGTH(what), i;
     unsigned char *dst;
     if (TYPEOF(what) != STRSXP) Rf_error("I can only decode base64 strings");
     for (i = 0; i < ns; i++)
