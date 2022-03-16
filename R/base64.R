@@ -28,11 +28,11 @@ base64encode <- function(what, linewidth, newline) {
 base64decode <- function(what, output=NULL, file) {
   if (!missing(file) && !missing(what)) stop("'what' and 'file' are mutually exclusive")
   if (!missing(file)) {
-    what <- file(file, "r")
+    what <- base::file(file, "r")
     on.exit(close(what))
   }
   if (is.character(output)) {
-    output <- file(output, "wb")
+    output <- base::file(output, "wb")
     on.exit(close(output))
   } else if (!inherits(output, "connection") && !is.null(output)) stop("output must be a filename, connection or NULL")
   r <- if (inherits(what, "connection")) {
