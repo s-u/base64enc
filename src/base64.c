@@ -23,7 +23,7 @@ typedef ptrdiff_t blen_t;
 /* -- base64 encode/decode -- */
 
 static char *base64encode(const unsigned char *src, blen_t len, char *dst);
-static int base64decode(const char *src, void *dst, blen_t max_len);
+static blen_t base64decode(const char *src, void *dst, blen_t max_len);
 
 static const char *b64tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -67,7 +67,7 @@ static unsigned int val(const char **src) {
 }
 
 /* returns the decoded length or -1 if max_len was not enough */
-static int base64decode(const char *src, void *dst, blen_t max_len) {
+static blen_t base64decode(const char *src, void *dst, blen_t max_len) {
     unsigned char *t = (unsigned char*) dst, *end = t + max_len;
     while (*src && t < end) {
 	unsigned int v = val(&src);
