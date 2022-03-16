@@ -168,19 +168,30 @@ SEXP B64_decode(SEXP what) {
     SEXP res;
     blen_t ns = XLENGTH(what), i;
     unsigned char *dst;
-    if (TYPEOF(what) != STRSXP) Rf_error("I can only decode base64 strings");
-    for (i = 0; i < ns; i++)
-	tl += strlen(CHAR(STRING_ELT(what, i)));
+    if (TYPEOF(what) != STRSXP && TYPEOF(what) != RAWSXP)
+	Rf_error("I can only decode base64 strings or raw vectors");
+    if (TYPEOF(what) == RAWSXP) {
+	tl = XLENGTH(what);
+    } else {
+	for (i = 0; i < ns; i++)
+	    tl += strlen(CHAR(STRING_ELT(what, i)));
+    }
     tl = (tl / 4) * 3 + 4;
     res = allocVector(RAWSXP, tl);
     dst = (unsigned char*) RAW(res);
-    for (i = 0; i < ns; i++) {
-	blen_t al = base64decode(CHAR(STRING_ELT(what, i)), dst, tl);
+    if (TYPEOF(what) == RAWSXP) {
+	blen_t al = base64decode((const char*)RAW(what), dst, tl);
 	if (al < 0) /* this should never happen as we allocated enough space ... */
 	    Rf_error("decoding error - insufficient buffer space");
-	tl -= al;
 	dst += al;
-    }
+    } else
+	for (i = 0; i < ns; i++) {
+	    blen_t al = base64decode(CHAR(STRING_ELT(what, i)), dst, tl);
+	    if (al < 0) /* this should never happen as we allocated enough space ... */
+		Rf_error("decoding error - insufficient buffer space");
+	    tl -= al;
+	    dst += al;
+	}
     SETLENGTH(res, dst - ((unsigned char*) RAW(res)));
     return res;
 }

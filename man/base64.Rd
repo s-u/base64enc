@@ -20,7 +20,7 @@ base64decode(what, output = NULL, file)
 \arguments{
   \item{what}{data to be encoded/decoded. For \code{base64encode} it
   can be a raw vector, text connection or file name. For
-  \code{base64decode} it can be a string or a binary connection.}
+  \code{base64decode} it can be a string, raw vector or a binary connection.}
   \item{linewidth}{if set, the output is split into lines with at most
     \code{linewidth} characters per line. Zero or \code{NA} denotes no
     limit and values 1 .. 3 are silently treated as 4 since that is the
