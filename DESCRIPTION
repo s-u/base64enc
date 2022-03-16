@@ -7,4 +7,5 @@ Depends: R (>= 2.9.0)
 Enhances: png
 Description: Tools for handling base64 encoding. It is more flexible than the orphaned base64 package.
 License: GPL-2 | GPL-3
-URL: http://www.rforge.net/base64enc
+URL: https://www.rforge.net/base64enc
+BugReports: https://github.com/s-u/base64enc/issues
