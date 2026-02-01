@@ -1,6 +1,6 @@
 /* base64.c - encoding/decoding of base64
 
-   (C)Copyright 2011,12 Simon Urbanek
+   (C)Copyright 2011-25 Simon Urbanek
 
    Licensed under a choice of GPLv2 or GPLv3
 
@@ -23,7 +23,7 @@ typedef ptrdiff_t blen_t;
 /* -- base64 encode/decode -- */
 
 static char *base64encode(const unsigned char *src, blen_t len, char *dst);
-static blen_t base64decode(const char *src, void *dst, blen_t max_len);
+static blen_t base64decode(const char *src, void *dst, blen_t max_len, int strict);
 
 static const char *b64tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -51,7 +51,7 @@ static char *base64encode(const unsigned char *src, blen_t len, char *dst) {
 
 #undef SRC
 
-static unsigned int val(const char **src) {
+static unsigned int val(const char **src, int strict) {
     while (1) {
 	char c = **src;
 	if (c) src[0]++; else return 0x10000;
@@ -61,34 +61,70 @@ static unsigned int val(const char **src) {
 	if (c == '+') return 62;
 	if (c == '/') return 63;
 	if (c == '=')
-	    return 0x10000;
+	    return 0x20000;
+	if (strict)
+	    return 0x30000;
 	/* we loop as to skip any blanks, newlines etc. */
     }
 }
 
 /* returns the decoded length or -1 if max_len was not enough */
-static blen_t base64decode(const char *src, void *dst, blen_t max_len) {
+static blen_t base64decode(const char *src, void *dst, blen_t max_len, int strict) {
+    const char *orig_src = src;
     unsigned char *t = (unsigned char*) dst, *end = t + max_len;
+    unsigned int v = 0x10000;
     while (*src && t < end) {
-	unsigned int v = val(&src);
+	v = val(&src, strict);
 	if (v > 64) break;
 	*t = v << 2;
-	v = val(&src);
+	v = val(&src, strict);
+	if (v > 64) break;
 	*t |= v >> 4;
 	if (v < 64) {
 	    if (++t == end) return -1;
 	    *t = v << 4;
-	    v = val(&src);
+	    v = val(&src, strict);
+	    /* only padding (= is) allowed at this point if strict */
+	    if (v > 64 && strict && (v != 0x20000 || *src != '=')) break;
 	    *t |= v >> 2;
 	    if (v < 64) {
 		if (++t == end) return -1;
 		*t = v << 6;
-		v = val(&src);
+		v = val(&src, strict);
+		if (v > 64 && strict && (v != 0x20000 || *src)) break;
 		*t |= v & 0x3f;
 		if (v < 64) t++;
 	    }
 	}
     }
+
+    /* only EOF is allowed in strict mode since we already checked the padding as we decoded */
+    if (strict && v > 64 && src > orig_src) {
+	int pad = (int) (((unsigned int)(src - orig_src)) & 3);
+	Rprintf("v=%x, pad=%d, org='%s'\n", v, pad, src);
+	if ((v == 0x20000) && pad == 0) {
+	    if (*src) { /* check for trailing content */
+		char tbuf[32];
+		if (strlen(src) < 32)
+		    strcpy(tbuf, src);
+		else {
+		    memcpy(tbuf, src, 28);
+		    strcpy(tbuf + 28, "...");
+		}
+		Rf_error("Trailing content '%s' after padding at position %ld in base64 string (not allowed in strict mode)", tbuf, (long) (src - orig_src));
+	    }
+	} else {
+	    if ((v == 0x20000) && pad < 3)
+		Rf_error("Padding is not allowed at position %ld in base64 string (not allowed in strict mode)", (long) (src - orig_src));
+	    if ((v == 0x20000) && *src != '=')
+		Rf_error("Padding required but missing at position %ld in base64 string (not allowed in strict mode)", (long) ((src - orig_src) + 1));
+	    if (v != 0x10000)
+		Rf_error("Invalid character ('%c') at position %ld in base64 string (not allowed in strict mode)", src[-1], (long) (src - orig_src));
+	    if (pad)
+		Rf_error("Missing padding (%d characters) at the end of the base64 string (not allowed in strict mode)", 4 - pad);
+	}
+    }
+
     return (blen_t) (t - (unsigned char*) dst);
 }
 
@@ -174,13 +210,14 @@ SEXP B64_encode(SEXP what, SEXP linewidth, SEXP newline) {
     }
 }
 
-SEXP B64_decode(SEXP what) {
+SEXP B64_decode(SEXP what, SEXP sStrict) {
     /* we need to allocate enough space to decode.
        FIXME: For now, we assume it's full of payload;
        we will over-allocate if there is junk behind it */
     blen_t tl = 0;
     SEXP res;
     blen_t ns = XLENGTH(what), i;
+    int strict = (asInteger(sStrict) > 0) ? 1 : 0;
     unsigned char *dst;
     if (TYPEOF(what) != STRSXP && TYPEOF(what) != RAWSXP)
 	Rf_error("I can only decode base64 strings or raw vectors");
@@ -194,13 +231,13 @@ SEXP B64_decode(SEXP what) {
     res = PROTECT(allocVector(RAWSXP, tl));
     dst = (unsigned char*) RAW(res);
     if (TYPEOF(what) == RAWSXP) {
-	blen_t al = base64decode((const char*)RAW(what), dst, tl);
+	blen_t al = base64decode((const char*)RAW(what), dst, tl, strict);
 	if (al < 0) /* this should never happen as we allocated enough space ... */
 	    Rf_error("decoding error - insufficient buffer space");
 	dst += al;
     } else
 	for (i = 0; i < ns; i++) {
-	    blen_t al = base64decode(CHAR(STRING_ELT(what, i)), dst, tl);
+	    blen_t al = base64decode(CHAR(STRING_ELT(what, i)), dst, tl, strict);
 	    if (al < 0) /* this should never happen as we allocated enough space ... */
 		Rf_error("decoding error - insufficient buffer space");
 	    tl -= al;

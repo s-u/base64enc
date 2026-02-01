@@ -15,7 +15,7 @@
 }
 \usage{
 base64encode(what, linewidth, newline)
-base64decode(what, output = NULL, file)
+base64decode(what, output = NULL, file, strict = FALSE)
 }
 \arguments{
   \item{what}{data to be encoded/decoded. For \code{base64encode} it
@@ -35,6 +35,13 @@ base64decode(what, output = NULL, file)
     \code{what}. It is essentially just a shorthand for
     \code{base64decode(file(name))}. Only one of \code{what} and
     \code{file} can be specified.}
+  \item{strict}{logical scalar. If \code{TRUE} then the decoder
+    validates the input contents making sure it strictly adheres
+    to the standard, does not include any other characters
+    (including white spaces, newlines etc.), is correctly padded
+    and does not have any trailing content. Any validation failure will
+    result in an error. Otherwise the decoding skips over invalid
+    characters, permits lack of padding and ignores trailing content.}
 }
 %\details{
 %}

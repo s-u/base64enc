@@ -25,7 +25,7 @@ base64encode <- function(what, linewidth, newline) {
   .Call(B64_encode, as.raw(what), linewidth, newline)
 }
 
-base64decode <- function(what, output=NULL, file) {
+base64decode <- function(what, output=NULL, file, strict=FALSE) {
   if (!missing(file) && !missing(what)) stop("'what' and 'file' are mutually exclusive")
   if (!missing(file)) {
     what <- base::file(file, "r")
@@ -37,9 +37,9 @@ base64decode <- function(what, output=NULL, file) {
   } else if (!inherits(output, "connection") && !is.null(output)) stop("output must be a filename, connection or NULL")
   r <- if (inherits(what, "connection")) {
     ## FIXME: we may want to use chunking ...
-    .Call(B64_decode, readLines(what, warn=FALSE))
+    .Call(B64_decode, readLines(what, warn=FALSE), strict)
   } else
-    .Call(B64_decode, what)
+    .Call(B64_decode, what, strict)
   if (inherits(output, "connection")) {
     writeBin(r, output)
     invisible(length(r))
