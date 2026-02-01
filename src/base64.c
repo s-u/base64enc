@@ -78,7 +78,7 @@ static blen_t base64decode(const char *src, void *dst, blen_t max_len, int stric
 	if (v > 64) break;
 	*t = v << 2;
 	v = val(&src, strict);
-	if (v > 64) break;
+	if (strict && v > 64) break;
 	*t |= v >> 4;
 	if (v < 64) {
 	    if (++t == end) return -1;
