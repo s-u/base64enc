@@ -154,7 +154,21 @@ SEXP B64_encode(SEXP what, SEXP linewidth, SEXP newline) {
 	    SET_STRING_ELT(res, i++, mkChar(buf));
 	    len -= amt;
 	}
-	if (i < XLENGTH(res)) SETLENGTH(res, i);
+#if R_VERSION >= R_Version(4,5,0)
+	if (i < XLENGTH(res)) { /* cannot shorten, copy */
+	    SEXP nres = PROTECT(allocVector(STRSXP, i));
+	    blen_t j = 0;
+	    while (j < i) {
+		SET_STRING_ELT(nres, j, STRING_ELT(res, j));
+		j++;
+	    }
+	    res = nres;
+	    UNPROTECT(1); /* in theory we should swap protection,
+			     but we return directly anyway */
+	}
+#else
+	SETLENGTH(res, i);
+#endif
 	UNPROTECT(1);
 	return res;
     }
@@ -177,7 +191,7 @@ SEXP B64_decode(SEXP what) {
 	    tl += strlen(CHAR(STRING_ELT(what, i)));
     }
     tl = (tl / 4) * 3 + 4;
-    res = allocVector(RAWSXP, tl);
+    res = PROTECT(allocVector(RAWSXP, tl));
     dst = (unsigned char*) RAW(res);
     if (TYPEOF(what) == RAWSXP) {
 	blen_t al = base64decode((const char*)RAW(what), dst, tl);
@@ -192,6 +206,16 @@ SEXP B64_decode(SEXP what) {
 	    tl -= al;
 	    dst += al;
 	}
-    SETLENGTH(res, dst - ((unsigned char*) RAW(res)));
+    blen_t rl = (blen_t) (dst - ((unsigned char*) RAW(res)));
+    if (rl < XLENGTH(res)) {
+#if R_VERSION >= R_Version(4,5,0)
+      SEXP nres = allocVector(RAWSXP, rl);
+      memcpy(RAW(nres), RAW(res), rl);
+      res = nres;
+#else
+      SETLENGTH(res, dst - ((unsigned char*) RAW(res)));
+#endif
+    }
+    UNPROTECT(1);
     return res;
 }
