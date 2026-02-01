@@ -1,3 +1,7 @@
+0.1-5	2026-02-01
+   o	remove SETLENGTH in R 4.5.0+ to be API-compliant
+
+
 0.1-4	2022-03-16
    o	add support for long vectors. Note that R does not
 	support strings longer than 2^31-1 bytes, so when
