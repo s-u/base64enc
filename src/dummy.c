@@ -2,10 +2,15 @@
    (this package uses NAMESPACE C-level symbol registration
    but the checks don't get that) */
 
-extern void R_registerRoutines();
-extern void R_useDynamicSymbols();
+/* wasm doesn't like this so we skip the fake there */
+#if !( defined(__EMSCRIPTEN__) || defined(__wasm__) || defined(__wasm32__) || defined(__wasm64__) )
+
+extern void R_registerRoutines(void);
+extern void R_useDynamicSymbols(void);
 
 void dummy() {
     R_registerRoutines();
     R_useDynamicSymbols();
 }
+
+#endif
