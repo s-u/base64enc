@@ -8,7 +8,7 @@
 extern void R_registerRoutines(void);
 extern void R_useDynamicSymbols(void);
 
-void dummy() {
+void dummy(void) {
     R_registerRoutines();
     R_useDynamicSymbols();
 }
