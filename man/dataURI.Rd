@@ -27,7 +27,7 @@ dataURI(data, mime = "", encoding = "base64", file)
   string of the form \code{data:[mime][;base64],<encoded-payload>}
 }
 \references{
-\href{http://tools.ietf.org/html/rfc2397}{RFC 2397 The "data" URL scheme}
+\href{https://datatracker.ietf.org/doc/html/rfc2397}{RFC 2397 The "data" URL scheme}
 }
 \author{
 Simon Urbanek
