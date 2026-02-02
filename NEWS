@@ -1,6 +1,10 @@
 0.1-7
    o	remove suprious debugging output in strict mode.
 
+   o	in strict decoding mode when using multiple input strings
+	enforce that only the last element is allowed to have
+	padding since it should be treated as one entity.
+
 
 0.1-6	2026-02-02
    o	updated URL in dataURI documentation
