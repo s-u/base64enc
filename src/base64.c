@@ -101,7 +101,6 @@ static blen_t base64decode(const char *src, void *dst, blen_t max_len, int stric
     /* only EOF is allowed in strict mode since we already checked the padding as we decoded */
     if (strict && v > 64 && src > orig_src) {
 	int pad = (int) (((unsigned int)(src - orig_src)) & 3);
-	Rprintf("v=%x, pad=%d, org='%s'\n", v, pad, src);
 	if ((v == 0x20000) && pad == 0) {
 	    if (*src) { /* check for trailing content */
 		char tbuf[32];
