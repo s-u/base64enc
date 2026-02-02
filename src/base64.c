@@ -236,9 +236,14 @@ SEXP B64_decode(SEXP what, SEXP sStrict) {
 	dst += al;
     } else
 	for (i = 0; i < ns; i++) {
-	    blen_t al = base64decode(CHAR(STRING_ELT(what, i)), dst, tl, strict);
+	    const char *c = CHAR(STRING_ELT(what, i));
+	    blen_t al = base64decode(c, dst, tl, strict);
 	    if (al < 0) /* this should never happen as we allocated enough space ... */
 		Rf_error("decoding error - insufficient buffer space");
+	    if (strict && i < ns - 1 &&  /* no lines other than the last one is allowed to have padding */
+		*c && c[strlen(c) - 1] == '=')
+		Rf_error("Input element %ld (out of %ld) has padding which is not allowed in strict mode.",
+			 (long) (i + 1), (long) ns);
 	    tl -= al;
 	    dst += al;
 	}
